@@ -1,0 +1,23 @@
+body {
+	font-family: 'Source Sans Pro', sans-serif;
+}
+
+#header {
+	text-align: center;
+	padding: 20px;
+}
+
+#signInButton {
+	position: absolute;
+	top: 200px;
+	width: 100%;
+	text-align: center;
+	display: none;
+}
+
+#word_cloud_container {
+	position: absolute;
+	top: 250px;
+	width: 100%;
+	text-align: center;
+}
