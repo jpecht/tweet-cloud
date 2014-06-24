@@ -1,81 +1,110 @@
+$.noty.defaults = {layout: 'center', killer: true, timeout: 3000};
 
-if (user.hasOwnProperty('errors')) {
-	$('#debugText').text('Error: ' + user.errors[0].message);
-	$('#signInButton').show();
-} else {
-	$('#debugText').text('Authenticated!');
-
-	$.get('stop_list.txt', function(ignore_str) {
-		var ignore_list = ignore_str.split('\n');
-		ignore_list.push('');
-
-		var tweet_str_array = [];
-		for (var i = 0; i < tweets.length; i++) {
-			var tw_arr = tweets[i].text.split(' ');
-			for (var j = 0; j < tw_arr.length; j++) {
-				var word = tw_arr[j].toLowerCase();
-				if (word.charAt(0) !== '@') {
-					var ignore_me = false;
-					for (var k = 0; k < ignore_list.length; k++) {
-						if (word === ignore_list[k]) {
-							ignore_me = true;
-							break;
-						}
-					}
-					if (!ignore_me) tweet_str_array.push(tw_arr[j].toLowerCase());
-				}
-			}
-		}
-
-		// test: to see the duplicate count of words
-		var obj = {}, count_obj = {}
-		for (var i = 0; i < tweet_str_array.length; i++) {
-			var word = tweet_str_array[i];
-			if (!obj.hasOwnProperty(word)) obj[word] = 1;
-			else obj[word]++;
-		}
-		for (var ind in obj) {
-			var count = obj[ind];
-			if (!count_obj.hasOwnProperty(count)) count_obj[count] = [];
-			count_obj[count].push(ind);
-			//if (!count_obj.hasOwnProperty(count)) count_obj[count] = 1;
-			//else count_obj[count]++;
-		}
-		console.log(tweet_str_array.length);
-		console.log(count_obj);
-
-		// make word cloud
-		var fill = d3.scale.category20();
-
-		d3.layout.cloud().size([300, 300])
-		.words(tweet_str_array.map(function(d) {
-				return {text: d, size: 10 + Math.random() * 90};
-			}))
-		.padding(5)
-		.rotate(function() { return ~~(Math.random() * 2) * 90; })
-		.font("Impact")
-		.fontSize(function(d) { return d.size; })
-		.on("end", draw)
-		.start();
-
-		function draw(words) {
-			d3.select("#word_cloud_container").append("svg")
-			.attr('id', 'word_cloud')
-			.attr("width", 300)
-			.attr("height", 300)
-			.append("g")
-			.attr("transform", "translate(150,150)")
-			.selectAll("text")
-			.data(words)
-			.enter().append("text")
-			.style("font-size", function(d) { return d.size + "px"; })
-			.style("font-family", "Impact")
-			.style("fill", function(d, i) { return fill(i); })
-			.attr("text-anchor", "middle")
-			.attr("transform", function(d) {
-				return "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")";
-			})
-			.text(function(d) { return d.text; });
+$('#form-submit').on('click', function() {
+	$.ajax({
+		url: 'connect.php', 
+		data: {username: $('#twitterName').val()},
+		success: function(data) {
+			var twitter_data = $.parseJSON(data);
+			createWordCloud(twitter_data.tweets);
+			//noty({text: 'Error muthafucka!'});
 		}
 	});
+});
+$.get('stop_list.txt', function(ignore_str) {
+	ignore_list = ignore_str.split('\n');
+	ignore_list.push('');
+});
+
+
+var createWordCloud = function(tweets) {
+	$('#word-cloud-container').empty();
+	$('#word-cloud-container').show();
+
+	// first split tweets into words
+	var tweet_str_array = [];
+	for (var i = 0; i < tweets.length; i++) {
+		var tw_arr = tweets[i].text.split(' ');
+		for (var j = 0; j < tw_arr.length; j++) {
+			var word = tw_arr[j].toLowerCase();
+			//word = word.replace(/[\.,-\/#!$%\^&\*;:{}=\-_`~()]/g, '');
+			if (word.charAt(0) !== '@') {
+				var ignore_me = false;
+				for (var k = 0; k < ignore_list.length; k++) {
+					if (word === ignore_list[k]) {
+						ignore_me = true;
+						break;
+					}
+				}
+				if (!ignore_me) tweet_str_array.push(tw_arr[j].toLowerCase());
+			}
+		}
+	}
+
+	// strip out words that only appear once
+	var word_count = {};
+	for (var i = 0; i < tweet_str_array.length; i++) {
+		var word = tweet_str_array[i];
+		if (!word_count.hasOwnProperty(word)) word_count[word] = 1;
+		else word_count[word]++;
+	}
+	tweet_str_array = [];
+	for (var ind in word_count) {
+		if (word_count[ind] !== 1) tweet_str_array.push(ind);
+	}
+
+	var max_count = 2;
+	for (var ind in word_count) {
+		if (word_count[ind] > max_count) max_count = word_count[ind];
+	}
+
+
+	// reverse index of word_count, for testing
+	var count_obj = {};
+	for (var ind in word_count) {
+		var count = word_count[ind];
+		if (!count_obj.hasOwnProperty(count)) count_obj[count] = [];
+		count_obj[count].push(ind);
+	}
+	console.log(count_obj);
+
+
+
+	// make word cloud
+	var fill = d3.scale.category20();
+
+	d3.layout.cloud().size([300, 300])
+	.words(tweet_str_array.map(function(d) {
+		var size = map(word_count[d], 2, max_count, 10, 100); // size ranges from 10-100
+		return {text: d, size: size}; 
+	}))
+	.padding(5)
+	.rotate(function() { return ~~(Math.random() * 2) * 90; })
+	.font("Impact")
+	.fontSize(function(d) { return d.size; })
+	.on("end", draw)
+	.start();
+
+	function draw(words) {
+		d3.select("#word-cloud-container").append("svg")
+		.attr('id', 'word_cloud')
+		.attr("width", 300)
+		.attr("height", 300)
+		.append("g")
+		.attr("transform", "translate(150,150)")
+		.selectAll("text")
+		.data(words)
+		.enter().append("text")
+		.style("font-size", function(d) { return d.size + "px"; })
+		.style("fill", function(d, i) { return fill(i); })
+		.attr("text-anchor", "middle")
+		.attr("transform", function(d) {
+			return "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")";
+		})
+		.text(function(d) { return d.text; });
+	}
+}
+
+var map = function(val, old_min, old_max, new_min, new_max) {
+	return (val-old_min)*(new_max-new_min)/(old_max-old_min) + new_min;
 }

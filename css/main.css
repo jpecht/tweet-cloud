@@ -1,23 +1,30 @@
 body {
 	font-family: 'Source Sans Pro', sans-serif;
+	padding-top: 130px;
+	background: url('../img/black-swirls.jpg');
 }
 
 #header {
 	text-align: center;
-	padding: 20px;
+	padding: 10px;
+	padding-bottom: 20px;
+	box-shadow: 0px 6px 5px rgba(0,0,0,0.4);
 }
 
-#signInButton {
-	position: absolute;
-	top: 200px;
+#container {
+	padding-top: 30px;
 	width: 100%;
 	text-align: center;
-	display: none;
 }
 
-#word_cloud_container {
-	position: absolute;
-	top: 250px;
-	width: 100%;
-	text-align: center;
+#word-cloud-container { display: none; }
+#sign-in-button { display: none; }
+#form-submit { margin-top: 15px; }
+
+.block {
+	display: inline-block;
+	width: 400px;
+	background-color: rgba(255,255,255,0.8);
+	box-shadow: 0px 2px 10px rgba(0,0,0,0.8);
+	padding: 25px;
 }
