@@ -1,4 +1,23 @@
-$.noty.defaults = {layout: 'center', killer: true, timeout: 3000};
+$.noty.defaults.layout = 'center';
+$.noty.defaults.timeout = 3000;
+$.noty.defaults.type = 'information';
+var fill = d3.scale.category20();
+
+$.get('auth_check.php', function(data) {
+	console.log(data);
+	if (data === '1') {
+		// signed in to twitter
+		$('#username-form').css('display', 'inline-block');
+	} else {
+		// not signed in to twitter
+		$('#sign-in-button').css('display', 'inline-block');
+	}
+});
+
+$.get('stop_list.txt', function(ignore_str) {
+	ignore_list = ignore_str.split('\n');
+	ignore_list.push('');
+});
 
 $('#form-submit').on('click', function() {
 	$.ajax({
@@ -6,20 +25,20 @@ $('#form-submit').on('click', function() {
 		data: {username: $('#twitterName').val()},
 		success: function(data) {
 			var twitter_data = $.parseJSON(data);
-			createWordCloud(twitter_data.tweets);
-			//noty({text: 'Error muthafucka!'});
+			if (twitter_data.hasOwnProperty('error')) {
+				console.log('Error in requesting data from connect.php');
+				console.log(twitter_data.error);
+			} else {
+				if (twitter_data.tweets.length === 0) noty({text: 'No tweets on this account!'});
+				else createWordCloud(twitter_data.tweets);
+			}
 		}
 	});
 });
-$.get('stop_list.txt', function(ignore_str) {
-	ignore_list = ignore_str.split('\n');
-	ignore_list.push('');
-});
-
 
 var createWordCloud = function(tweets) {
 	$('#word-cloud-container').empty();
-	$('#word-cloud-container').show();
+	$('#word-cloud-container').css('display', 'inline-block');
 
 	// first split tweets into words
 	var tweet_str_array = [];
@@ -71,8 +90,6 @@ var createWordCloud = function(tweets) {
 
 
 	// make word cloud
-	var fill = d3.scale.category20();
-
 	d3.layout.cloud().size([300, 300])
 	.words(tweet_str_array.map(function(d) {
 		var size = map(word_count[d], 2, max_count, 10, 100); // size ranges from 10-100

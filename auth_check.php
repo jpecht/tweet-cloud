@@ -1,0 +1,1 @@
+<?php session_start(); echo array_key_exists('access_token', $_SESSION); ?>
