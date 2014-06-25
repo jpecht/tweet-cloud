@@ -3,8 +3,8 @@ $.noty.defaults.timeout = 3000;
 $.noty.defaults.type = 'information';
 var fill = d3.scale.category20();
 
-$.get('auth_check.php', function(data) {
-	console.log(data);
+// check if signed in to twitter
+$.get('php/auth_check.php', function(data) {
 	if (data === '1') {
 		// signed in to twitter
 		$('#username-form').css('display', 'inline-block');
@@ -14,6 +14,7 @@ $.get('auth_check.php', function(data) {
 	}
 });
 
+// load list of words that are ignored when creating word cloud
 $.get('stop_list.txt', function(ignore_str) {
 	ignore_list = ignore_str.split('\n');
 	ignore_list.push('');
@@ -21,7 +22,7 @@ $.get('stop_list.txt', function(ignore_str) {
 
 $('#form-submit').on('click', function() {
 	$.ajax({
-		url: 'connect.php', 
+		url: 'php/connect.php', 
 		data: {username: $('#twitterName').val()},
 		success: function(data) {
 			var twitter_data = $.parseJSON(data);

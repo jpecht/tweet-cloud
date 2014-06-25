@@ -7,13 +7,13 @@
 
 /* Start session and load lib */
 session_start();
-require_once('lib/twitteroauth/twitteroauth.php');
-require_once('lib/twitteroauth/config.php');
+require_once('twitteroauth.php');
+require_once('config.php');
 
 /* If the oauth_token is old redirect to the connect page. */
 if (isset($_REQUEST['oauth_token']) && $_SESSION['oauth_token'] !== $_REQUEST['oauth_token']) {
   $_SESSION['oauth_status'] = 'oldtoken';
-  header('Location: ./lib/twitteroauth/clearsessions.php');
+  header('Location: clearsessions.php');
 }
 
 /* Create TwitteroAuth object with app key/secret and token key/secret from default phase */
@@ -36,5 +36,5 @@ if (200 == $connection->http_code) {
   header('Location: ./');
 } else {
   /* Save HTTP status for error dialog on connnect page.*/
-  header('Location: ./lib/twitteroauth/clearsessions.php');
+  header('Location: clearsessions.php');
 }

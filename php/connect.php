@@ -1,7 +1,7 @@
 <?php 
 	session_start();
-	require_once('lib/twitteroauth/twitteroauth.php');
-	require_once('lib/twitteroauth/config.php');
+	require_once('twitteroauth.php');
+	require_once('config.php');
 
 	if (array_key_exists('access_token', $_SESSION)) {
 		/* Get user access tokens out of the session. */
