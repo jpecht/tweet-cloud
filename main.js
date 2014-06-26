@@ -39,6 +39,9 @@ $('#form-submit').on('click', function() {
 					NProgress.set(0.8);
 					var c_data = analyzeTweets(twitter_data.tweets);
 
+					console.log(twitter_data.user.profile_background_image_url_https);
+
+
 					$('#word-cloud-container').empty();
 					createWordCloud(c_data);
 					$('#word-cloud-container').css('display', 'inline-block');
@@ -73,7 +76,6 @@ var writeStats = function(data) {
 
 	for (var i = 0; i < mo_words.length; i++) {
 		var row = d3.select('#stats-table tbody').append('tr');
-		row.append('td').text(i + 1);
 		row.append('td').text(mo_words[i].text);
 		row.append('td').text(mo_words[i].count);
 	}
@@ -88,6 +90,9 @@ var analyzeTweets = function(tweets) {
 		var tw_arr = tweets[i].split(' ');
 		for (var j = 0; j < tw_arr.length; j++) {
 			var word = tw_arr[j].toLowerCase();
+			var strippers = ['"', '.', ',', '!', '?'];
+			for (var i = 0; i < strippers.length; i++) word.replace(strippers[i], '');
+
 			if (word.charAt(0) !== '@') {
 				var ignore_me = false;
 				for (var k = 0; k < ignore_list.length; k++) {
@@ -160,7 +165,7 @@ var createWordCloud = function(c_data) {
 		.words(c_data.tweet_str_array.map(function(d) {
 			 // size ranges from 10-100, consider using log scale d3.scale.log()
 			var size = mapNum(c_data.word_count[d], c_data.min_count, c_data.max_count, 10, 100);
-			return {text: d, size: size}; 
+			return {text: d, size: 10 + 90*Math.random()}; 
 		}))
 		.padding(5)
 		.rotate(function() { return ~~(Math.random() * 2) * 90; })
