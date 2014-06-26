@@ -29,12 +29,14 @@
 
 			$tweets = $connection->get('statuses/user_timeline', $send_data); // get t3h tweets
 			
-			if ($i != 0) array_shift($tweets); // shift off first tweet because repeat
 			if (count($tweets) == 0) break; // no more tweets :(
 			else {
+				if ($i != 0) array_shift($tweets); // shift off first tweet because repeat
+				if (count($tweets) == 0) break; // no more tweets :(
 				for ($j = 0; $j < count($tweets); $j++) {
 					array_push($tweet_array, $tweets[$j]->{'text'});
 				}
+
 				$last_max_id = $tweets[count($tweets) - 1]->{'id_str'}; // store earliest tweet id from request
 			}
 		}

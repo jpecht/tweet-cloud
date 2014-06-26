@@ -24,28 +24,65 @@ $('#form-submit').on('click', function() {
 	NProgress.start();
 
 	$.ajax({
-		url: 'php/connect.php', 
+		url: 'php/get_tweets_all.php', 
 		data: {username: $('#twitterName').val()},
 		success: function(data) {
+			//console.log(data);
 			var twitter_data = $.parseJSON(data);
 			if (twitter_data.hasOwnProperty('error')) {
 				console.log('Error in requesting data from connect.php');
 				console.log(twitter_data.error);
 			} else {
+				//console.log(twitter_data.tweets);
 				if (twitter_data.tweets.length === 0) noty({text: 'No tweets on this account!'});
-				else createWordCloud(twitter_data.tweets);
+				else {
+					NProgress.set(0.8);
+					var c_data = analyzeTweets(twitter_data.tweets);
+
+					$('#word-cloud-container').empty();
+					createWordCloud(c_data);
+					$('#word-cloud-container').css('display', 'inline-block');
+
+					writeStats(c_data);
+					$('#show-stats').css('display', 'inline-block');
+				}
 			}
 		}
 	});
 });
 
-var createWordCloud = function(tweets) {
-	NProgress.set(0.8);
+$('#show-stats').on('click', function() {
+	$('#show-stats').hide();
+	$('#stats-container').css('display', 'inline-block');
+});
 
-	$('#word-cloud-container').empty();
-	$('#word-cloud-container').css('display', 'inline-block');
+var writeStats = function(data) {
+	$('#stats-table tr:not("#stats-table-header")').remove();
 
-	// first split tweets into words
+	var mo_words = []; // most occuring words
+	loop1:
+	for (var i = data.count_obj.length - 1; i >= 0; i--) {
+		if (typeof data.count_obj[i] !== 'undefined') {
+	loop2:
+			for (var j = 0; j < data.count_obj[i].length; j++) {
+				mo_words.push({text: data.count_obj[i][j], count: i});
+				if (mo_words.length === 10) break loop1;
+			}
+		}
+	}
+
+	for (var i = 0; i < mo_words.length; i++) {
+		var row = d3.select('#stats-table tbody').append('tr');
+		row.append('td').text(i + 1);
+		row.append('td').text(mo_words[i].text);
+		row.append('td').text(mo_words[i].count);
+	}
+}
+
+var analyzeTweets = function(tweets) {			
+	var min_words = 100; // min number of words needed to create a nice looking word cloud
+
+	// first split tweets into words (tweet_str_array = ['hello', 'foo', 'bar', 'foo', 'foo'])
 	var tweet_str_array = [];
 	for (var i = 0; i < tweets.length; i++) {
 		var tw_arr = tweets[i].split(' ');
@@ -64,7 +101,7 @@ var createWordCloud = function(tweets) {
 		}
 	}
 
-	// strip out words that only appear once
+	// strip out words that only appear once (word_count = {'hello': 1, 'foo': 3})
 	var word_count = {};
 	for (var i = 0; i < tweet_str_array.length; i++) {
 		var word = tweet_str_array[i];
@@ -76,13 +113,7 @@ var createWordCloud = function(tweets) {
 		if (word_count[ind] !== 1) tweet_str_array.push(ind);
 	}
 
-	var min_count = 1, max_count = 2;
-	for (var ind in word_count) {
-		if (word_count[ind] > max_count) max_count = word_count[ind];
-	}
-
-
-	// reverse index of word_count, for testing
+	// reverse index of word_count, for testing (count_obj = [ 1: ['hello', 'bar'], 3: ['foo'] ])
 	var count_obj = [];
 	for (var ind in word_count) {
 		var count = word_count[ind];
@@ -91,20 +122,20 @@ var createWordCloud = function(tweets) {
 	}
 	console.log(count_obj);
 
+	// rejects if not enough re-occurring words
 	if (count_obj.length < 3) {
 		noty({text: 'Sorry this account doesnt tweet enough =/'});
 		return;
 	}
 
 	// if there's enough words, get rid of the least occurring words
-	var occurence_threshold = 1;
-	for (var i = 1; i <= 5; i++) {
-		var wc = 0;
+	var occurence_threshold = 2;
+	for (var i = 2; i <= 5; i++) {
+		var iwc = 0; // individual word count
 		for (var j = i + 1; j < count_obj.length; j++) {
-			if (typeof count_obj[j] !== 'undefined') wc += count_obj[j].length;
+			if (typeof count_obj[j] !== 'undefined') iwc += count_obj[j].length;
 		}
-		// min number of words needed to create a nice looking word cloud
-		if (wc >= 100) occurence_threshold = i;
+		if (iwc >= min_words) occurence_threshold = i;
 		else break;
 	}
 	for (var i = 0; i < tweet_str_array.length; i++) {
@@ -112,23 +143,23 @@ var createWordCloud = function(tweets) {
 			tweet_str_array.splice(i, 1);
 		}
 	}
-	min_count = occurence_threshold + 1;
+	var min_count = occurence_threshold + 1;
+	var max_count = count_obj.length - 1;
 
+	return {
+		min_count: min_count,
+		max_count: max_count,
+		tweet_str_array: tweet_str_array, 
+		word_count: word_count,
+		count_obj: count_obj
+	};
+}
 
-	// try getting rid of duplicates
-	var collect = {};
-	for (var i = 0; i < tweet_str_array.length; i++) {
-		var word = tweet_str_array[i];
-		if (!collect.hasOwnProperty(word)) collect[word] = true;
-	}
-	tweet_str_array = [];
-	for (var ind in collect) tweet_str_array.push(ind);
-
-
-	// make word cloud
+var createWordCloud = function(c_data) {
 	d3.layout.cloud().size([300, 300])
-		.words(tweet_str_array.map(function(d) {
-			var size = map(word_count[d], min_count, max_count, 10, 100); // size ranges from 10-100
+		.words(c_data.tweet_str_array.map(function(d) {
+			 // size ranges from 10-100, consider using log scale d3.scale.log()
+			var size = mapNum(c_data.word_count[d], c_data.min_count, c_data.max_count, 10, 100);
 			return {text: d, size: size}; 
 		}))
 		.padding(5)
@@ -137,29 +168,29 @@ var createWordCloud = function(tweets) {
 		.fontSize(function(d) { return d.size; })
 		.on("end", draw)
 		.start();
-
-	function draw(words) {
-		d3.select("#word-cloud-container").append("svg")
-			.attr('id', 'word_cloud')
-			.attr("width", 300)
-			.attr("height", 300)
-		.append("g")
-			.attr("transform", "translate(150,150)")
-		.selectAll("text")
-			.data(words)
-		.enter().append("text")
-			.style("font-size", function(d) { return d.size + "px"; })
-			.style("fill", function(d, i) { return fill(i); })
-			.attr("text-anchor", "middle")
-			.attr("transform", function(d) {
-				return "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")";
-			})
-			.text(function(d) { return d.text; });
-
-		NProgress.done();
-	}
 }
 
-var map = function(val, old_min, old_max, new_min, new_max) {
+var draw = function(words) {
+	d3.select("#word-cloud-container").append("svg")
+		.attr('id', 'word_cloud')
+		.attr("width", 300)
+		.attr("height", 300)
+	.append("g")
+		.attr("transform", "translate(150,150)")
+	.selectAll("text")
+		.data(words)
+	.enter().append("text")
+		.style("font-size", function(d) { return d.size + "px"; })
+		.style("fill", function(d, i) { return fill(i); })
+		.attr("text-anchor", "middle")
+		.attr("transform", function(d) {
+			return "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")";
+		})
+		.text(function(d) { return d.text; });
+
+	NProgress.done();
+}
+
+var mapNum = function(val, old_min, old_max, new_min, new_max) {
 	return (val-old_min)*(new_max-new_min)/(old_max-old_min) + new_min;
 }
