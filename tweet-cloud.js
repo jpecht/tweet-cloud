@@ -1,7 +1,19 @@
 $.noty.defaults.layout = 'center';
 $.noty.defaults.timeout = 3000;
-$.noty.defaults.type = 'information';
-var fill = d3.scale.category20();
+$.noty.defaults.type = 'warning';
+var cloud_width = 400;
+var cloud_height = 400;
+var min_font_size = 10;
+var max_font_size = 100;
+//var rotate_values = [-90, -45, 0, 45, 90];
+var rotate_values = [-90, 0, 0, 90];
+var cloud_padding = 5;
+
+//colors
+var spring_colors = ['#67E491', '#64BCD9', '#6D81DF'];	
+var fall_colors = ['#FFCE00', '#FFA400', '#FF6A00'];
+var blue_colors = ['rgb(107,174,214)','rgb(49,130,189)','rgb(7,81,156)','rgb(28,53,99)'];
+
 
 // check if signed in to twitter
 $.get('php/auth_check.php', function(data) {
@@ -20,44 +32,65 @@ $.get('stop_list.txt', function(ignore_str) {
 	ignore_list.push('');
 });
 
-$('#form-submit').on('click', function() {
+$('#submit-button').on('click', function() {
+	submitRequest();
+});
+$('#twitter-name-input').on('keypress', function(event) {
+	if (event.which === 13) submitRequest();
+});
+
+$('#show-stats').on('click', function() {
+	$('#show-stats').hide();
+	$('#stats-block').css('display', 'inline-block');
+});
+
+
+var submitRequest = function() {
 	NProgress.start();
 
+	$('#submit-button').html('Grabbing tweets...');
+	$('#word-cloud-container').hide();
+	$('#word-cloud-container').empty();
+	$('#show-stats').hide();
+	$('#stats-block').hide();
 	$.ajax({
 		url: 'php/get_tweets_all.php', 
-		data: {username: $('#twitterName').val()},
+		data: {username: $('#twitter-name-input').val()},
 		success: function(data) {
-			//console.log(data);
 			var twitter_data = $.parseJSON(data);
-			if (twitter_data.hasOwnProperty('error')) {
-				console.log('Error in requesting data from connect.php');
-				console.log(twitter_data.error);
+			if (twitter_data.hasOwnProperty('errors')) {
+				noty({text: "<strong>This twitter name doesn't exist!</strong><br />Try another one!"});
 			} else {
 				//console.log(twitter_data.tweets);
 				if (twitter_data.tweets.length === 0) noty({text: 'No tweets on this account!'});
 				else {
 					NProgress.set(0.8);
 					var c_data = analyzeTweets(twitter_data.tweets);
+					if (c_data === false) return;
+					else {
+						createWordCloud(c_data);
+						$('#word-cloud-container').css('display', 'inline-block');
+
+						writeStats(c_data);
+						$('#show-stats').css('display', 'inline-block');
+					}
 
 					console.log(twitter_data.user.profile_background_image_url_https);
-
-
-					$('#word-cloud-container').empty();
-					createWordCloud(c_data);
-					$('#word-cloud-container').css('display', 'inline-block');
-
-					writeStats(c_data);
-					$('#show-stats').css('display', 'inline-block');
+					if (twitter_data.user.hasOwnProperty('profile_background_image_url_https')) {
+						var img_str = 'url('+twitter_data.user.profile_background_image_url_https +')';
+						$('#header').css('background', img_str + ' no-repeat center');
+					} else {
+						$('#header').css('background', 'rgba(255,255,255,0.8)');
+					}
 				}
 			}
+		},
+		complete: function() {
+			$('#submit-button').html('Create a Word Cloud');
+			NProgress.done();
 		}
 	});
-});
-
-$('#show-stats').on('click', function() {
-	$('#show-stats').hide();
-	$('#stats-container').css('display', 'inline-block');
-});
+}
 
 var writeStats = function(data) {
 	$('#stats-table tr:not("#stats-table-header")').remove();
@@ -83,6 +116,7 @@ var writeStats = function(data) {
 
 var analyzeTweets = function(tweets) {			
 	var min_words = 100; // min number of words needed to create a nice looking word cloud
+	var include_hashtag = $('#hashtag-checkbox').prop('checked');
 
 	// first split tweets into words (tweet_str_array = ['hello', 'foo', 'bar', 'foo', 'foo'])
 	var tweet_str_array = [];
@@ -90,10 +124,12 @@ var analyzeTweets = function(tweets) {
 		var tw_arr = tweets[i].split(' ');
 		for (var j = 0; j < tw_arr.length; j++) {
 			var word = tw_arr[j].toLowerCase();
-			var strippers = ['"', '.', ',', '!', '?'];
-			for (var i = 0; i < strippers.length; i++) word.replace(strippers[i], '');
+			
+			// slows it down a lot! should replace this part with regex
+			//var strippers = ['"', '.', ',', '!', '?'];
+			//for (var i = 0; i < strippers.length; i++) word.replace(strippers[i], '');
 
-			if (word.charAt(0) !== '@') {
+			if (word.charAt(0) !== '@' && (include_hashtag || word.charAt(0) !== '#')) {
 				var ignore_me = false;
 				for (var k = 0; k < ignore_list.length; k++) {
 					if (word === ignore_list[k]) {
@@ -106,7 +142,7 @@ var analyzeTweets = function(tweets) {
 		}
 	}
 
-	// strip out words that only appear once (word_count = {'hello': 1, 'foo': 3})
+	// counting the words! e.g. word_count = {'hello': 1, 'foo': 3}
 	var word_count = {};
 	for (var i = 0; i < tweet_str_array.length; i++) {
 		var word = tweet_str_array[i];
@@ -115,6 +151,7 @@ var analyzeTweets = function(tweets) {
 	}
 	tweet_str_array = [];
 	for (var ind in word_count) {
+		// strip out words that only appear once 
 		if (word_count[ind] !== 1) tweet_str_array.push(ind);
 	}
 
@@ -125,35 +162,22 @@ var analyzeTweets = function(tweets) {
 		if (!count_obj.hasOwnProperty(count)) count_obj[count] = [];
 		count_obj[count].push(ind);
 	}
-	console.log(count_obj);
 
-	// rejects if not enough re-occurring words
-	if (count_obj.length < 3) {
+	// sorts tweet_str_array by occurence and takes top 100 words
+	tweet_str_array.sort(function(a, b) {
+		if (word_count[a] < word_count[b]) return 1;
+		else if (word_count[a] == word_count[b]) return 0;
+		else return -1;
+	});
+	if (tweet_str_array.length < 25) {
 		noty({text: 'Sorry this account doesnt tweet enough =/'});
-		return;
+		return false;
 	}
-
-	// if there's enough words, get rid of the least occurring words
-	var occurence_threshold = 2;
-	for (var i = 2; i <= 5; i++) {
-		var iwc = 0; // individual word count
-		for (var j = i + 1; j < count_obj.length; j++) {
-			if (typeof count_obj[j] !== 'undefined') iwc += count_obj[j].length;
-		}
-		if (iwc >= min_words) occurence_threshold = i;
-		else break;
-	}
-	for (var i = 0; i < tweet_str_array.length; i++) {
-		if (word_count[tweet_str_array[i]] <= occurence_threshold) {
-			tweet_str_array.splice(i, 1);
-		}
-	}
-	var min_count = occurence_threshold + 1;
-	var max_count = count_obj.length - 1;
+	else if (tweet_str_array.length > 100) tweet_str_array = tweet_str_array.splice(0, 99);
 
 	return {
-		min_count: min_count,
-		max_count: max_count,
+		min_count: word_count[tweet_str_array[tweet_str_array.length-1]],
+		max_count: count_obj.length - 1,
 		tweet_str_array: tweet_str_array, 
 		word_count: word_count,
 		count_obj: count_obj
@@ -161,39 +185,60 @@ var analyzeTweets = function(tweets) {
 }
 
 var createWordCloud = function(c_data) {
-	d3.layout.cloud().size([300, 300])
+	d3.layout.cloud().size([cloud_width, cloud_height])
 		.words(c_data.tweet_str_array.map(function(d) {
 			 // size ranges from 10-100, consider using log scale d3.scale.log()
-			var size = mapNum(c_data.word_count[d], c_data.min_count, c_data.max_count, 10, 100);
-			return {text: d, size: 10 + 90*Math.random()}; 
+			var size = mapNum(c_data.word_count[d], c_data.min_count, c_data.max_count, min_font_size, max_font_size);
+			return {text: d, size: size}; 
 		}))
-		.padding(5)
-		.rotate(function() { return ~~(Math.random() * 2) * 90; })
-		.font("Impact")
+		.padding(cloud_padding)
+		.rotate(function() {
+			return rotate_values[~~(Math.random() * rotate_values.length)];
+		})
+		//.font("Impact")
 		.fontSize(function(d) { return d.size; })
 		.on("end", draw)
 		.start();
 }
 
 var draw = function(words) {
+	var scale = d3.scale.linear();
+	var domain = [];
+	
+	switch($('#color-select').val()) {
+		case 'fall':
+			var range = fall_colors;
+			break;
+		case 'blue':
+			var range = blue_colors;
+			break;
+		default:
+			var range = spring_colors;
+	}
+
+	for (var i = 0; i < range.length; i++) {
+		domain.push(min_font_size + (max_font_size - min_font_size)*i/(range.length-1));
+	}
+	scale.domain(domain).range(range);
+	
 	d3.select("#word-cloud-container").append("svg")
 		.attr('id', 'word_cloud')
-		.attr("width", 300)
-		.attr("height", 300)
+		.attr("width", cloud_width)
+		.attr("height", cloud_height)
 	.append("g")
-		.attr("transform", "translate(150,150)")
+		.attr("transform", "translate("+cloud_width/2+","+cloud_height/2+")")
 	.selectAll("text")
 		.data(words)
 	.enter().append("text")
 		.style("font-size", function(d) { return d.size + "px"; })
-		.style("fill", function(d, i) { return fill(i); })
+		.style("fill", function(d, i) {
+			return scale(d.size);
+		})
 		.attr("text-anchor", "middle")
 		.attr("transform", function(d) {
 			return "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")";
 		})
 		.text(function(d) { return d.text; });
-
-	NProgress.done();
 }
 
 var mapNum = function(val, old_min, old_max, new_min, new_max) {

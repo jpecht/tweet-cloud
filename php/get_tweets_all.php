@@ -29,10 +29,16 @@
 
 			$tweets = $connection->get('statuses/user_timeline', $send_data); // get t3h tweets
 			
+			// check for error, e.g. invalid twitter name
+			if (is_object($tweets)) {
+				echo json_encode($tweets);
+				return;
+			}
+
 			if (count($tweets) == 0) break; // no more tweets :(
 			else {
 				if ($i != 0) array_shift($tweets); // shift off first tweet because repeat
-				if (count($tweets) == 0) break; // no more tweets :(
+				if (count($tweets) == 0) break; // no more tweets, get outta here!
 				for ($j = 0; $j < count($tweets); $j++) {
 					array_push($tweet_array, $tweets[$j]->{'text'});
 				}
