@@ -29,6 +29,8 @@ a:hover { color: #BE4444; text-decoration: none; }
 	cursor: pointer;
 }
 
+#tweet-cloud-content { max-width: 900px; }
+
 .block {
 	background-color: rgba(255,255,255,0.8);
 	text-align: center;

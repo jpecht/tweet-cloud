@@ -23,52 +23,50 @@
 		<link rel="stylesheet" href="css/style.css" type="text/css" />
 	</head>
 	<body>
-		<div id="tweet-cloud-content" class="content">
-			<div id="header"><a href="/tweet-cloud">Tweet Cloud</a></div>
-			<div id="back-to-site"><&nbsp;&nbsp;<a id="back-to-site-link" href="/">Back to Site</a></div>
-			<div id="content">
-				<div class="row">
-					<div class="col-md-6" id="left-column">
-						<div class="row" id="sign-in-row">
-							<div id="sign-in-button" class="block" data-scroll-reveal>
-								<a href="./php/redirect.php"><img src="img/twitter_sign_in.png" alt="Sign in with Twitter"/></a>	
-							</div>
-							<div id="username-form" class="block">
-								<div class="form-group" id="form-container">
-									<input type="text" class="form-control" id="twitter-name-input" placeholder="enter a twitter name here">
-									<div id="hashtag-text-container">
-										<input type="checkbox" id="hashtag-checkbox" checked>
-										<div id="hashtag-text">Include hashtags?</div>
-									</div>
-									<div id="color-select-container">
-										<span>Color Scheme: </span>
-										<select id="color-select">
-											<option value="spring">Spring</option>
-											<option value="fall">Fall</option>
-											<option value="blue">Blue</option>
-										</select>
-									</div>
-									<button class="btn btn-info" id="submit-button">Create a Word Cloud!</button>
-								</div>
-							</div>
+		<div id="header"><a href="/tweet-cloud">Tweet Cloud</a></div>
+		<div id="back-to-site"><&nbsp;&nbsp;<a id="back-to-site-link" href="/">Back to Site</a></div>
+		<div id="content">
+			<div class="row">
+				<div class="col-md-6" id="left-column">
+					<div class="row" id="sign-in-row">
+						<div id="sign-in-button" class="block" data-scroll-reveal>
+							<a href="./php/redirect.php"><img src="img/twitter_sign_in.png" alt="Sign in with Twitter"/></a>	
 						</div>
-						<div class="row">
-							<div id="word-cloud-container"></div>
+						<div id="username-form" class="block">
+							<div class="form-group" id="form-container">
+								<input type="text" class="form-control" id="twitter-name-input" placeholder="enter a twitter name here">
+								<div id="hashtag-text-container">
+									<input type="checkbox" id="hashtag-checkbox" checked>
+									<div id="hashtag-text">Include hashtags?</div>
+								</div>
+								<div id="color-select-container">
+									<span>Color Scheme: </span>
+									<select id="color-select">
+										<option value="spring">Spring</option>
+										<option value="fall">Fall</option>
+										<option value="blue">Blue</option>
+									</select>
+								</div>
+								<button class="btn btn-info" id="submit-button">Create a Word Cloud!</button>
+							</div>
 						</div>
 					</div>
-					<div class="col-md-6">
-						<div id="stats-column">
-							<button type="button" id="show-stats" class="btn btn-info">Show Stats</button>
-							<div id="stats-block" class="block">
-								<table id="stats-table" class="table table-striped table-bordered table-condensed table-responsive">
-									<tbody>
-										<tr id="stats-table-header">
-											<td><b>Word</b></td>
-											<td><b>Count</b></td>
-										</tr>
-									</tbody>
-								</table>
-							</div>
+					<div class="row">
+						<div id="word-cloud-container"></div>
+					</div>
+				</div>
+				<div class="col-md-6">
+					<div id="stats-column">
+						<button type="button" id="show-stats" class="btn btn-info">Show Stats</button>
+						<div id="stats-block" class="block">
+							<table id="stats-table" class="table table-striped table-bordered table-condensed table-responsive">
+								<tbody>
+									<tr id="stats-table-header">
+										<td><b>Word</b></td>
+										<td><b>Count</b></td>
+									</tr>
+								</tbody>
+							</table>
 						</div>
 					</div>
 				</div>
