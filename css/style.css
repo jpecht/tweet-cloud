@@ -71,6 +71,7 @@ a:hover { color: #BE4444; text-decoration: none; }
 	height: 30px;
 	width: 100%;
 	text-align: center;
+	visibility: hidden;
 }
 #login-info { color: green; }
 #logout-button {

@@ -21,8 +21,8 @@ $.noty.defaults.killer = true;
 		$('.button-curtain').css('display', function() {
 			return (data === '') ? 'block' : 'none';
 		});
-		$('#login-info-container').css('display', function() {
-			return (data === '') ? 'none' : 'block';
+		$('#login-info-container').css('visibility', function() {
+			return (data === '') ? 'hidden' : 'visible';
 		});
 		$('#login-info').html('logged in as <strong>' + data + '</strong>');
 	});
