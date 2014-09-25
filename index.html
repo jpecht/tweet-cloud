@@ -29,10 +29,10 @@
 			<div class="row">
 				<div class="col-md-6" id="left-column">
 					<div class="row" id="sign-in-row">
-						<div id="sign-in-button" class="block" data-scroll-reveal>
-							<a href="./php/redirect.php"><img src="img/twitter_sign_in.png" alt="Sign in with Twitter"/></a>	
-						</div>
 						<div id="username-form" class="block">
+							<div class="button-curtain" data-scroll-reveal>
+								<div id="sign-in-button"><a href="./php/redirect.php"><img src="img/twitter_sign_in.png" alt="Sign in with Twitter"/></a></div>
+							</div>
 							<div class="form-group" id="form-container">
 								<input type="text" class="form-control" id="twitter-name-input" placeholder="enter a twitter name here">
 								<div id="hashtag-text-container">
@@ -48,6 +48,11 @@
 									</select>
 								</div>
 								<button class="btn btn-info" id="submit-button">Create a Word Cloud!</button>
+							</div>
+							<div id="login-info-container">
+								<span id="login-info">logged in as </span>
+								<!-- <span>&nbsp; · &nbsp; </span>
+								<span><a id="logout-button">logout</a></span> -->
 							</div>
 						</div>
 					</div>
