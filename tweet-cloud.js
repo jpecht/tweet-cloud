@@ -17,7 +17,6 @@ $.noty.defaults.killer = true;
 	var blue_colors = ['rgb(107,174,214)','rgb(49,130,189)','rgb(7,81,156)','rgb(28,53,99)'];
 
 
-
 	// check if signed in to twitter
 	$.get('php/auth_check.php', function(data) {
 		$('.button-curtain').css('display', function() {
@@ -29,7 +28,7 @@ $.noty.defaults.killer = true;
 		$('#login-info').html('logged in as <strong>' + data + '</strong>');
 	});
 
-
+	
 	// load list of words that are ignored when creating word cloud
 	$.get('stop_list.txt', function(ignore_str) {
 		ignore_list = ignore_str.split('\n');
@@ -62,8 +61,7 @@ $.noty.defaults.killer = true;
 
 
 	var submitRequest = function() {
-		NProgress.start();
-
+		NProgress.start();	
 		$('#submit-button').html('Grabbing tweets...');
 		$('#word-cloud-container').hide();
 		$('#word-cloud-container').empty();
@@ -96,8 +94,7 @@ $.noty.defaults.killer = true;
 							writeStats(c_data);
 							$('#show-stats').css('display', 'inline-block');
 						}
-
-						console.log(twitter_data.user.profile_background_image_url_https);
+	
 						if (twitter_data.user.hasOwnProperty('profile_background_image_url_https')) {
 							var img_str = 'url('+twitter_data.user.profile_background_image_url_https +')';
 							$('#header').css('background', img_str + ' no-repeat center');
@@ -116,7 +113,6 @@ $.noty.defaults.killer = true;
 
 	var writeStats = function(data) {
 		$('#stats-table tr:not("#stats-table-header")').remove();
-
 		var mo_words = []; // most occuring words
 		loop1:
 		for (var i = data.count_obj.length - 1; i >= 0; i--) {
@@ -139,7 +135,7 @@ $.noty.defaults.killer = true;
 	var analyzeTweets = function(tweets) {			
 		var min_words = 100; // min number of words needed to create a nice looking word cloud
 		var include_hashtag = $('#hashtag-checkbox').prop('checked');
-
+	
 		// first split tweets into words (tweet_str_array = ['hello', 'foo', 'bar', 'foo', 'foo'])
 		var tweet_str_array = [];
 		for (var i = 0; i < tweets.length; i++) {
@@ -204,8 +200,8 @@ $.noty.defaults.killer = true;
 			word_count: word_count,
 			count_obj: count_obj
 		};
-	}
-
+	};
+	
 	var createWordCloud = function(c_data) {
 		d3.layout.cloud().size([cloud_width, cloud_height])
 			.words(c_data.tweet_str_array.map(function(d) {
@@ -221,8 +217,8 @@ $.noty.defaults.killer = true;
 			.fontSize(function(d) { return d.size; })
 			.on("end", draw)
 			.start();
-	}
-
+	};
+	
 	var draw = function(words) {
 		var scale = d3.scale.linear();
 		var domain = [];
@@ -261,9 +257,9 @@ $.noty.defaults.killer = true;
 				return "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")";
 			})
 			.text(function(d) { return d.text; });
-	}
+	};
 
 	var mapNum = function(val, old_min, old_max, new_min, new_max) {
 		return (val-old_min)*(new_max-new_min)/(old_max-old_min) + new_min;
-	}
+	};
 })();
