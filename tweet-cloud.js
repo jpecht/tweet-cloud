@@ -4,7 +4,6 @@ $.noty.defaults.type = 'warning';
 $.noty.defaults.killer = true;
 
 (function() {
-
 	var cloud_width = 400;
 	var cloud_height = 400;
 	var min_font_size = 10;
